@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  gpdb:
+    image: woblerr/greenplum:6.27.1
+    stop_grace_period: 2m
+    ports:
+      - "5433:5432"
+    environment:
+      GREENPLUM_PASSWORD: gpadminpw
+      GREENPLUM_DATABASE_NAME: gpdb
+    volumes:
+      - gpdata:/data
+    shm_size: "1gb"
+
+volumes:
+  gpdata:
