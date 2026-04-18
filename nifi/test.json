@@ -1,0 +1,11 @@
+{
+  "flow" : {
+    "createdTimestamp" : 1776539326623,
+    "description" : "test кубик",
+    "identifier" : "test",
+    "lastModifiedTimestamp" : 1776539326623,
+    "name" : "test",
+    "versionCount" : 0
+  },
+  "latest" : false
+}
