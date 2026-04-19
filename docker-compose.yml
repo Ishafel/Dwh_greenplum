@@ -2,6 +2,7 @@ services:
   gpdb:
     image: woblerr/greenplum:6.27.1
     hostname: gpdb
+    restart: unless-stopped
     stop_grace_period: 2m
     ports:
       - "${GREENPLUM_PORT:-5433}:5432"
@@ -23,6 +24,7 @@ services:
   gpfdist:
     image: woblerr/greenplum:6.27.1
     hostname: gpfdist
+    restart: unless-stopped
     command:
       - bash
       - -lc
@@ -48,6 +50,7 @@ services:
         NIFI_VERSION: ${NIFI_VERSION:-2.8.0}
         POSTGRES_JDBC_VERSION: ${POSTGRES_JDBC_VERSION:-42.7.10}
         CLICKHOUSE_JDBC_VERSION: ${CLICKHOUSE_JDBC_VERSION:-0.9.7}
+    restart: unless-stopped
     depends_on:
       liquibase-greenplum:
         condition: service_completed_successfully
@@ -83,6 +86,7 @@ services:
   clickhouse:
     image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION:-26.3.9.8}
     hostname: clickhouse
+    restart: unless-stopped
     ports:
       - "${CLICKHOUSE_HTTP_PORT:-8123}:8123"
       - "${CLICKHOUSE_NATIVE_PORT:-9000}:9000"
