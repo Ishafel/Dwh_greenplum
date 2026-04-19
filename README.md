@@ -1,8 +1,9 @@
-# Greenplum 6 + NiFi
+# Greenplum 6 + NiFi + ClickHouse
 
-Локальный Docker Compose стек с Greenplum 6 и Apache NiFi 2.8.0.
+Локальный Docker Compose стек с Greenplum 6, Apache NiFi 2.8.0 и ClickHouse.
 Миграции БД накатываются отдельным контейнером Liquibase после готовности Greenplum.
 В образ Liquibase добавлен PostgreSQL JDBC-драйвер.
+В образ NiFi добавлены PostgreSQL и ClickHouse JDBC-драйверы.
 Для загрузки файлов в Greenplum добавлен `gpfdist`, который раздает локальную landing-зону
 `data/landing`.
 
@@ -14,6 +15,7 @@ docker compose up -d --build
 
 При запуске `gpdb` сначала проходит healthcheck, затем `liquibase` выполняет миграции и завершается,
 после этого стартует NiFi.
+ClickHouse стартует отдельным сервисом и доступен независимо от миграций Greenplum.
 
 Greenplum в этом стеке инициализируется как однонодовый кластер с 4 primary-сегментами.
 Если меняешь число сегментов, нужно пересоздать volume `gpdata`, иначе уже созданный каталог
@@ -61,6 +63,55 @@ docker compose ps gpdb
 
 ```bash
 docker compose logs -f gpdb
+```
+
+## Управление ClickHouse
+
+HTTP-интерфейс ClickHouse:
+
+```text
+http://localhost:8123
+```
+
+Native-порт ClickHouse:
+
+```text
+localhost:9000
+```
+
+Дефолтные параметры подключения из `.env.example`:
+
+```text
+Database: dwh
+User: dwh
+Password: dwhpw
+```
+
+Проверить ClickHouse через HTTP:
+
+```bash
+curl 'http://localhost:8123/?user=dwh&password=dwhpw' --data-binary 'SELECT 1'
+```
+
+Зайти в `clickhouse-client` внутри контейнера:
+
+```bash
+docker compose exec clickhouse clickhouse-client \
+  --user dwh \
+  --password dwhpw \
+  --database dwh
+```
+
+Посмотреть статус сервиса:
+
+```bash
+docker compose ps clickhouse
+```
+
+Посмотреть логи ClickHouse:
+
+```bash
+docker compose logs -f clickhouse
 ```
 
 ## Миграции Liquibase
@@ -123,6 +174,12 @@ admin / GreenplumNiFi123
 /opt/nifi/jdbc/postgresql.jar
 ```
 
+И ClickHouse JDBC-драйвер:
+
+```text
+/opt/nifi/jdbc/clickhouse.jar
+```
+
 ## Подключение к Greenplum из NiFi
 
 Для controller service `DBCPConnectionPool` в NiFi используй:
@@ -136,6 +193,20 @@ Password: gpadminpw
 ```
 
 Если поменяешь `GREENPLUM_DATABASE_NAME` или `GREENPLUM_PASSWORD`, укажи те же значения в NiFi.
+
+## Подключение к ClickHouse из NiFi
+
+Для controller service `DBCPConnectionPool` в NiFi используй:
+
+```text
+Database Connection URL: jdbc:clickhouse://clickhouse:8123/dwh
+Database Driver Class Name: com.clickhouse.jdbc.ClickHouseDriver
+Database Driver Location(s): /opt/nifi/jdbc/clickhouse.jar
+Database User: dwh
+Password: dwhpw
+```
+
+Если поменяешь `CLICKHOUSE_DB`, `CLICKHOUSE_USER` или `CLICKHOUSE_PASSWORD`, укажи те же значения в NiFi.
 
 ## External tables через gpfdist
 
