@@ -296,3 +296,45 @@ docker compose exec -u gpadmin gpdb /usr/local/greenplum-db/bin/psql -d gpdb \
 
 Например, файлы для новой сущности можно складывать в `/data/landing/orders/`,
 а external table создавать с `LOCATION ('gpfdist://gpfdist:8081/orders/*.csv')`.
+
+## Автодеплой через GitHub Actions
+
+Workflow `.github/workflows/deploy.yml` запускает деплой при push в `main`,
+а также вручную через `workflow_dispatch`. Запуска на `pull_request` нет.
+
+Сервер деплоя находится в приватной сети, поэтому GitHub-hosted runner из облака не сможет
+подключиться к нему напрямую. Для автодеплоя нужен self-hosted runner на сервере с label:
+
+```text
+dwh-greenplum
+```
+
+Минимальная схема:
+
+1. В GitHub открой `Settings -> Actions -> Runners -> New self-hosted runner`.
+2. Выбери Linux x64 и выполни команды установки на сервере деплоя.
+3. При настройке runner добавь label `dwh-greenplum`.
+4. Установи runner как service и запусти его.
+
+После этого при вливании в `main` workflow выполнит:
+
+```bash
+/mnt/bulk/dwh_greenplum/scripts/deploy.sh
+```
+
+Скрипт перед деплоем проверяет, что Docker использует `/mnt/bulk/docker`, выводит
+`git status`, `docker compose ps` и counts для Greenplum и ClickHouse, затем выполняет:
+
+```bash
+git pull --ff-only origin main
+```
+
+После этого он запускает:
+
+```bash
+docker compose up -d --build
+```
+
+Скрипт не делает `docker compose down`, не удаляет volume, не удаляет Docker backup, не
+трогает локальные untracked-файлы вроде `VM_REVIEW_NOTES_2026-04-19.md` и после деплоя
+проверяет `docker compose ps`, counts в Greenplum/ClickHouse и health NiFi.

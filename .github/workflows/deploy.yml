@@ -1,0 +1,31 @@
+name: Deploy DWH stack
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: dwh-greenplum-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy DWH stack
+    if: github.repository == 'Ishafel/Dwh_greenplum' && github.ref == 'refs/heads/main'
+    runs-on:
+      - self-hosted
+      - linux
+      - dwh-greenplum
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout deployment scripts
+        uses: actions/checkout@v4
+
+      - name: Deploy
+        env:
+          APP_DIR: /mnt/bulk/dwh_greenplum
+          EXPECTED_DOCKER_ROOT: /mnt/bulk/docker
+        run: ./scripts/deploy.sh
