@@ -1,5 +1,6 @@
--- DROP FUNCTION s_adb_as_services_csoko_stg.f_refresh_table_v2_1(text, text, text, text, bool, bool, bool);
+--liquibase formatted sql
 
+--changeset codex:f_refresh_table_v2_1 runOnChange:true splitStatements:false
 CREATE OR REPLACE FUNCTION s_adb_as_services_csoko_stg.f_refresh_table_v2_1(p_schema_target text, p_table_target text, p_schema_src text, p_table_src text, p_truncate bool DEFAULT true, p_do_analyze bool DEFAULT true, p_compare_row_count bool DEFAULT false)
 	RETURNS int8
 	LANGUAGE plpgsql
